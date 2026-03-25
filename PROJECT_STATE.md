@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — points-travel
 
 ## Last Updated
-2026-03-24
+2026-03-25
 
 ## What This Project Is
 A web app that helps users maximize credit card points for flights. Users enter their cards and balances, search a route, and see every award flight they can book — including via transfer partners — with foolproof step-by-step booking instructions.
@@ -25,6 +25,35 @@ A web app that helps users maximize credit card points for flights. Users enter 
 - Redemption detail UI — step-by-step booking guides
 - Daily review slash command (.claude/commands/daily-review.md)
 - Dev server running at localhost:3000
+- **Seats.aero API integration: `lib/seats-aero.ts`** (see below)
+
+## Seats.aero API Integration (lib/seats-aero.ts)
+
+Written 2026-03-25. This is a **drop-in replacement** for `data/mockFlights.ts`.
+
+**What it does:**
+- Calls `https://seats.aero/partnerapi/search` with `Partner-Authorization` header
+- Reads API key from `SEATS_AERO_API_KEY` in `.env.local` (not committed)
+- Auto-paginates up to 5 pages (safety cap)
+- Default search window: today → 60 days out (overridable)
+- Maps Seats.aero cabin codes (Y/W/J/F) → internal `economy/premiumEconomy/business/first` fields
+- Normalizes taxes to USD (GBP→USD conversion for BA/VS programs)
+- Source slug normalization so program IDs match transfer partner definitions
+- Also exports `fetchTripDetail(availabilityId)` for segment-level data (direct vs. connecting)
+- Next.js cache hints: 30 min revalidation for search, 5 min for trip detail
+- `retailPrice` is null (Seats.aero doesn't provide it) — redemption engine handles this gracefully
+
+**How to activate (1-line swap):**
+In `lib/redemptionEngine.ts`, change:
+```ts
+// Before (mock):
+import { searchFlights, type AwardAvailability } from '../data/mockFlights'
+// After (live):
+import { searchFlights, type AwardAvailability } from './seats-aero'
+```
+Then add `SEATS_AERO_API_KEY=your_key` to `.env.local`.
+
+**Prerequisite:** Seats.aero partner API requires a paid subscription.
 
 ## Key Decisions Made
 - Skipped Supabase — using localStorage for MVP (no auth needed for personal tool)
@@ -44,10 +73,13 @@ A web app that helps users maximize credit card points for flights. Users enter 
 - Mobile app
 
 ## Next Steps
-1. Review the updated UI at localhost:3000 — check logos, card display, search modes, affordability tiers
-2. Test the full redemption flow end to end (add cards → search → view guide)
-3. Research Roame.travel features and plan differentiation
-4. Connect to real Seats.aero API when UI scaffolding is solid
+1. **Activate live Seats.aero data** — get API key from seats.aero, add to `.env.local`, flip the import in `lib/redemptionEngine.ts`
+2. **Add `retailPrice` enrichment** — Seats.aero doesn't provide it; options: (a) hardcode by route/cabin as we do in mock, (b) integrate Google Flights or Kayak API, (c) skip CPP badge for live results
+3. **Use `fetchTripDetail()`** to populate the `direct` flag and per-segment flight numbers on the booking guide page
+4. **Update Search UI** to accept date range inputs and pass to `searchFlights(origin, dest, startDate, endDate)`
+5. **Research Roame.travel features** and plan differentiation
+6. **Handle the `searchFlights` signature change** — the live API version is `async` (returns a Promise), so `findRedemptions()` in the redemption engine and all call sites need to be made async too
+7. Review the updated UI at localhost:3000 — check logos, card display, search modes, affordability tiers
 
 ## Open Questions
 - When to switch from mock to real Seats.aero data?
