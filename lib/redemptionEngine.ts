@@ -1,5 +1,5 @@
 import { cards, currencies, transferPartners, awardPrograms, valuations } from '../data'
-import { searchFlights, type AwardAvailability } from '../data/mockFlights'
+import { searchFlights, type AwardAvailability } from './seats-aero'
 import type { UserCard } from '../data/userCards'
 import type { UserMiles } from '../data/userMiles'
 
@@ -196,15 +196,15 @@ function buildOption(
 }
 
 // Main entry point: find all redemption options for a route
-export function findRedemptions(
+export async function findRedemptions(
   userCards: UserCard[],
   origin: string,
   destination: string,
   cabinFilter?: CabinClass,
   userMiles: UserMiles[] = []
-): RedemptionOption[] {
+): Promise<RedemptionOption[]> {
   const pools = buildPointsPools(userCards, userMiles)
-  const flights = searchFlights(origin, destination)
+  const flights = await searchFlights(origin, destination)
 
   if (pools.length === 0 || flights.length === 0) return []
 

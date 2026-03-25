@@ -1,8 +1,9 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { mockFlights } from '../../data/mockFlights'
+import type { AwardAvailability } from '../../data/mockFlights'
 import { generateGuide } from '../../lib/guideGenerator'
 import type { CabinClass } from '../../lib/redemptionEngine'
 
@@ -12,6 +13,17 @@ export default function RedemptionGuide() {
   const cabin = searchParams.get('cabin') as CabinClass | null
   const currencyId = searchParams.get('currency')
   const programId = searchParams.get('program')
+  const [flight, setFlight] = useState<AwardAvailability | null>(null)
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    if (!flightId) return
+    const stored = sessionStorage.getItem(`flight:${flightId}`)
+    if (stored) {
+      setFlight(JSON.parse(stored) as AwardAvailability)
+    }
+    setLoaded(true)
+  }, [flightId])
 
   if (!flightId || !cabin || !currencyId || !programId) {
     return (
@@ -30,12 +42,19 @@ export default function RedemptionGuide() {
     )
   }
 
-  const flight = mockFlights.find((f) => f.id === flightId)
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-blue-600" />
+      </div>
+    )
+  }
+
   if (!flight) {
     return (
       <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
         <p className="text-zinc-500 dark:text-zinc-400">
-          Flight not found. It may have been removed from the mock data.
+          Flight data not found. Please go back to search results and click the booking guide link again.
         </p>
         <Link
           href="/search"

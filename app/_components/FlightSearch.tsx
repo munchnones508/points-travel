@@ -6,7 +6,7 @@ import { availableRoutes, awardPrograms, cards, currencies } from '../../data'
 import { getLogoUrl } from '../../lib/logos'
 import { getUserCards, type UserCard } from '../../data/userCards'
 import { getUserMiles, type UserMiles } from '../../data/userMiles'
-import { findRedemptions, type RedemptionOption, type CabinClass } from '../../lib/redemptionEngine'
+import type { RedemptionOption, CabinClass } from '../../lib/redemptionEngine'
 import { buyRates, welcomeBonuses } from '../../data/pointsPricing'
 
 type SearchMode = 'search' | 'browse'
@@ -27,54 +27,95 @@ export default function FlightSearch() {
   const [browseResults, setBrowseResults] = useState<{ route: string; label: string; options: RedemptionOption[] }[]>([])
   const [hasBrowsed, setHasBrowsed] = useState(false)
 
+  // Loading + error state
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     setUserCards(getUserCards())
     setUserMiles(getUserMiles())
   }, [])
 
-  function handleSearch() {
+  async function fetchRedemptions(
+    o: string,
+    d: string,
+    cabin?: CabinClass
+  ): Promise<RedemptionOption[]> {
+    const res = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userCards,
+        origin: o,
+        destination: d,
+        cabinFilter: cabin ?? cabinFilter,
+        userMiles,
+      }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error ?? 'Search failed')
+    return data.results as RedemptionOption[]
+  }
+
+  async function handleSearch() {
     const o = origin.trim().toUpperCase()
     const d = destination.trim().toUpperCase()
     if (!o || !d) return
-    const options = findRedemptions(userCards, o, d, cabinFilter, userMiles)
-    setResults(options)
-    setHasSearched(true)
+    setLoading(true)
+    setError(null)
+    try {
+      const options = await fetchRedemptions(o, d)
+      setResults(options)
+      setHasSearched(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Search failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  function handleBrowse() {
-    const allRouteResults: { route: string; label: string; options: RedemptionOption[] }[] = []
+  async function handleBrowse() {
+    setLoading(true)
+    setError(null)
+    try {
+      const allRouteResults: { route: string; label: string; options: RedemptionOption[] }[] = []
 
-    for (const route of availableRoutes) {
-      const options = findRedemptions(
-        userCards,
-        route.origin,
-        route.destination,
-        cabinFilter,
-        userMiles
-      )
-      if (options.length > 0) {
-        allRouteResults.push({
-          route: `${route.origin}-${route.destination}`,
-          label: route.label,
-          options,
-        })
+      // Fetch all routes in parallel
+      const routePromises = availableRoutes.map(async (route) => {
+        const options = await fetchRedemptions(route.origin, route.destination)
+        return { route, options }
+      })
+
+      const settled = await Promise.all(routePromises)
+
+      for (const { route, options } of settled) {
+        if (options.length > 0) {
+          allRouteResults.push({
+            route: `${route.origin}-${route.destination}`,
+            label: route.label,
+            options,
+          })
+        }
       }
+
+      // Sort routes: those with affordable options first, then by best value
+      allRouteResults.sort((a, b) => {
+        const aAffordable = a.options.some((o) => o.canAfford)
+        const bAffordable = b.options.some((o) => o.canAfford)
+        if (aAffordable && !bAffordable) return -1
+        if (!aAffordable && bAffordable) return 1
+        const aBest = Math.max(...a.options.map((o) => o.centsPerPoint ?? 0))
+        const bBest = Math.max(...b.options.map((o) => o.centsPerPoint ?? 0))
+        return bBest - aBest
+      })
+
+      setBrowseResults(allRouteResults)
+      setHasBrowsed(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Browse failed. Please try again.')
+    } finally {
+      setLoading(false)
     }
-
-    // Sort routes: those with affordable options first, then by best value
-    allRouteResults.sort((a, b) => {
-      const aAffordable = a.options.some((o) => o.canAfford)
-      const bAffordable = b.options.some((o) => o.canAfford)
-      if (aAffordable && !bAffordable) return -1
-      if (!aAffordable && bAffordable) return 1
-      // Then by best cents-per-point in each route
-      const aBest = Math.max(...a.options.map((o) => o.centsPerPoint ?? 0))
-      const bBest = Math.max(...b.options.map((o) => o.centsPerPoint ?? 0))
-      return bBest - aBest
-    })
-
-    setBrowseResults(allRouteResults)
-    setHasBrowsed(true)
   }
 
   // Reset results when switching modes
@@ -197,7 +238,7 @@ export default function FlightSearch() {
             </button>
           </div>
           <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-            Using mock flight data for MVP. Try routes like JFK→NRT, JFK→DOH, JFK→LHR, SFO→SIN.
+            Search any route — powered by live Seats.aero availability data.
           </p>
         </div>
       )}
@@ -217,8 +258,25 @@ export default function FlightSearch() {
         </div>
       )}
 
+      {/* Loading spinner */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-zinc-200 border-t-blue-600 dark:border-zinc-700 dark:border-t-blue-400" />
+          <span className="ml-3 text-sm text-zinc-500 dark:text-zinc-400">
+            Searching live availability...
+          </span>
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        </div>
+      )}
+
       {/* Search results */}
-      {mode === 'search' && hasSearched && results.length === 0 && (
+      {mode === 'search' && hasSearched && results.length === 0 && !loading && (
         <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-zinc-500 dark:text-zinc-400">
             No redemption options found for {origin.toUpperCase()} → {destination.toUpperCase()} in {cabinFilter === 'first' ? 'First Class' : cabinFilter === 'business' ? 'Business Class' : 'Economy'}.
@@ -239,7 +297,7 @@ export default function FlightSearch() {
       )}
 
       {/* Browse results */}
-      {mode === 'browse' && hasBrowsed && browseResults.length === 0 && (
+      {mode === 'browse' && hasBrowsed && browseResults.length === 0 && !loading && (
         <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
           <p className="text-zinc-500 dark:text-zinc-400">
             No routes found with available {cabinFilter === 'first' ? 'First Class' : cabinFilter === 'business' ? 'Business Class' : 'Economy'} award space for your points currencies.
@@ -500,6 +558,14 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
         <div className="mt-3">
           <Link
             href={`/redeem?flight=${option.flight.id}&cabin=${option.cabin}&currency=${option.paymentPath.currencyId}&program=${option.flight.source}`}
+            onClick={() => {
+              // Store flight data in sessionStorage so the guide page can use it
+              // (live API flights aren't in the mock data array)
+              sessionStorage.setItem(
+                `flight:${option.flight.id}`,
+                JSON.stringify(option.flight)
+              )
+            }}
             className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
           >
             View step-by-step booking guide →

@@ -11,6 +11,7 @@
  */
 
 import type { AwardAvailability } from '../data/mockFlights'
+export type { AwardAvailability }
 
 // ─── Seats.aero API types ─────────────────────────────────────────────────────
 
