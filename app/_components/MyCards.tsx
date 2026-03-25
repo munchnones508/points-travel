@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { cards, currencies, awardPrograms } from '../../data'
+import { getLogoUrl } from '../../lib/logos'
 import {
   getUserCards,
   addUserCard,
@@ -122,8 +123,16 @@ export default function MyCards() {
     return currency?.name ?? currencyId
   }
 
-  function getPointsSummary(): { id: string; name: string; total: number; type: 'card' | 'miles' }[] {
-    const items: { id: string; name: string; total: number; type: 'card' | 'miles' }[] = []
+  type SummaryItem = {
+    id: string
+    heading: string    // H1: issuer name or airline name
+    subtitle: string   // H2: currency name or program name
+    total: number
+    type: 'card' | 'miles'
+  }
+
+  function getPointsSummary(): SummaryItem[] {
+    const items: SummaryItem[] = []
 
     // Aggregate credit card points by currency
     const cardTotals = new Map<string, number>()
@@ -133,9 +142,11 @@ export default function MyCards() {
       cardTotals.set(card.currencyId, (cardTotals.get(card.currencyId) ?? 0) + uc.balance)
     }
     for (const [currencyId, total] of cardTotals) {
+      const currency = currencies.find((c) => c.id === currencyId)
       items.push({
         id: currencyId,
-        name: getCurrencyName(currencyId),
+        heading: currency?.issuer ?? currencyId,
+        subtitle: currency?.name ?? currencyId,
         total,
         type: 'card',
       })
@@ -151,7 +162,8 @@ export default function MyCards() {
       } else {
         items.push({
           id: um.programId,
-          name: program ? `${program.airline} ${program.name}` : um.programId,
+          heading: program?.airline ?? um.programId,
+          subtitle: program?.name ?? um.programId,
           total: um.balance,
           type: 'miles',
         })
@@ -173,22 +185,38 @@ export default function MyCards() {
             Your Points Summary
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {summary.map((s) => (
-              <div
-                key={s.id}
-                className="rounded-md border border-zinc-100 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/50"
-              >
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {s.name}
-                </p>
-                <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
-                  {s.total.toLocaleString()}
-                </p>
-                <p className="text-xs text-zinc-400 dark:text-zinc-500">
-                  {s.type === 'miles' ? 'airline miles' : 'credit card points'}
-                </p>
-              </div>
-            ))}
+            {summary.map((s) => {
+              const logoUrl = getLogoUrl(s.id)
+              return (
+                <div
+                  key={s.id}
+                  className="flex items-center gap-3 rounded-md border border-zinc-100 bg-zinc-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/50"
+                >
+                  {logoUrl && (
+                    <img
+                      src={logoUrl}
+                      alt={s.heading}
+                      className="h-10 w-10 shrink-0 rounded-md object-contain"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      {s.heading}
+                    </p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {s.subtitle}
+                    </p>
+                    <p className="mt-1 text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                      {s.total.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {s.type === 'miles' ? 'airline miles' : 'credit card points'}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -259,23 +287,35 @@ export default function MyCards() {
               if (!card) return null
               const isEditing = editingCardId === uc.cardId
 
+              const cardLogoUrl = getLogoUrl(card.currencyId)
+
               return (
                 <div
                   key={uc.cardId}
                   className="flex items-center justify-between py-3"
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {card.issuer} {card.name}
-                    </p>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {getCurrencyName(card.currencyId)}
-                      {card.notes && (
-                        <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
-                          {card.notes}
-                        </span>
-                      )}
-                    </p>
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    {cardLogoUrl && (
+                      <img
+                        src={cardLogoUrl}
+                        alt={card.issuer}
+                        className="h-8 w-8 shrink-0 rounded object-contain"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {card.issuer} {card.name}
+                      </p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        {getCurrencyName(card.currencyId)}
+                        {card.notes && (
+                          <span className="ml-2 text-xs text-amber-600 dark:text-amber-400">
+                            {card.notes}
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                   <div className="ml-4 flex items-center gap-2">
                     {isEditing ? (
@@ -400,18 +440,30 @@ export default function MyCards() {
               if (!program) return null
               const isEditing = editingProgramId === um.programId
 
+              const programLogoUrl = getLogoUrl(um.programId)
+
               return (
                 <div
                   key={um.programId}
                   className="flex items-center justify-between py-3"
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {program.airline}
-                    </p>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                      {program.name}
-                    </p>
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    {programLogoUrl && (
+                      <img
+                        src={programLogoUrl}
+                        alt={program.airline}
+                        className="h-8 w-8 shrink-0 rounded object-contain"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                        {program.airline}
+                      </p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        {program.name}
+                      </p>
+                    </div>
                   </div>
                   <div className="ml-4 flex items-center gap-2">
                     {isEditing ? (
