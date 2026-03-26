@@ -53,12 +53,16 @@ export default function RedemptionGuide() {
   if (!flight) {
     return (
       <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-        <p className="text-zinc-500 dark:text-zinc-400">
-          Flight data not found. Please go back to search results and click the booking guide link again.
+        <div className="mb-3 text-3xl">⚠️</div>
+        <h3 className="mb-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          Couldn&apos;t load your flight details
+        </h3>
+        <p className="mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+          This can happen if you refreshed the page. Head back to search and click the booking guide link again.
         </p>
         <Link
           href="/search"
-          className="mt-4 inline-block text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+          className="inline-block text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
         >
           ← Back to Search
         </Link>
@@ -109,17 +113,21 @@ export default function RedemptionGuide() {
             className="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+              {/* Large, solid step number — easy to scan */}
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-base font-bold text-white">
                 {index + 1}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">
                   {step.title}
                 </h3>
                 {step.warning && (
-                  <div className="mt-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                    <span className="font-semibold">Warning: </span>
-                    {step.warning}
+                  <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                    <span className="shrink-0">⚠</span>
+                    <span>
+                      <span className="font-semibold">Warning: </span>
+                      {step.warning}
+                    </span>
                   </div>
                 )}
                 <div className="mt-2 whitespace-pre-line text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
@@ -130,7 +138,7 @@ export default function RedemptionGuide() {
                     href={step.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-2 inline-block text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400"
+                    className="mt-3 inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300"
                   >
                     Open {new URL(step.url).hostname} →
                   </a>
@@ -143,9 +151,9 @@ export default function RedemptionGuide() {
 
       {/* Tips */}
       {guide.tips.length > 0 && (
-        <div className="rounded-lg border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-800/50">
           <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-            Tips & Things to Know
+            Tips &amp; Things to Know
           </h3>
           <ul className="space-y-2">
             {guide.tips.map((tip, index) => (
@@ -153,7 +161,7 @@ export default function RedemptionGuide() {
                 key={index}
                 className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-400"
               >
-                <span className="mt-1 block h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-600" />
+                <span className="mt-0.5 shrink-0 text-green-600 dark:text-green-400">✓</span>
                 {tip}
               </li>
             ))}

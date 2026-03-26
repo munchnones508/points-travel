@@ -521,9 +521,13 @@ export default function MyCards() {
 
       {/* Empty state */}
       {!hasAnything && (
-        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-          <p className="text-zinc-500 dark:text-zinc-400">
-            No points added yet. Add a credit card or airline miles above to get started.
+        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-10 text-center dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="mb-3 text-4xl">✈</div>
+          <h3 className="mb-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            Add your first card to get started
+          </h3>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Once you&apos;ve added your points, we&apos;ll show you every award flight you can book — and how to unlock the rest.
           </p>
         </div>
       )}

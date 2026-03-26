@@ -131,15 +131,19 @@ export default function FlightSearch() {
   if (!hasPoints) {
     return (
       <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-        <p className="mb-4 text-zinc-500 dark:text-zinc-400">
-          You haven&apos;t added any points yet. Add your credit cards or airline
-          miles first so we can find redemptions you can actually book.
+        <div className="mb-4 text-4xl">✈</div>
+        <h3 className="mb-2 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+          You&apos;re one step away
+        </h3>
+        <p className="mb-6 text-zinc-500 dark:text-zinc-400">
+          Add your first credit card or airline miles to see which award flights
+          you can book right now — and how to unlock the rest.
         </p>
         <Link
           href="/"
-          className="inline-block rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-block rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
         >
-          Add Your Points
+          Add Your Points →
         </Link>
       </div>
     )
@@ -174,19 +178,24 @@ export default function FlightSearch() {
       {/* Cabin toggle */}
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Cabin:</span>
-        {(['economy', 'business', 'first'] as CabinClass[]).map((cabin) => (
-          <button
-            key={cabin}
-            onClick={() => setCabinFilter(cabin)}
-            className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-              cabinFilter === cabin
-                ? 'bg-blue-600 text-white'
-                : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
-            }`}
-          >
-            {cabin === 'first' ? 'First Class' : cabin === 'business' ? 'Business' : 'Economy'}
-          </button>
-        ))}
+        {(['economy', 'business', 'first'] as CabinClass[]).map((cabin) => {
+          const icon = cabin === 'first' ? '⭐' : cabin === 'business' ? '🛋' : '💺'
+          const label = cabin === 'first' ? 'First' : cabin === 'business' ? 'Business' : 'Economy'
+          const isActive = cabinFilter === cabin
+          return (
+            <button
+              key={cabin}
+              onClick={() => setCabinFilter(cabin)}
+              className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-all ${
+                isActive
+                  ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-600 ring-offset-1 dark:ring-offset-zinc-900'
+                  : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+              }`}
+            >
+              {icon} {label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Search mode form */}
@@ -277,11 +286,28 @@ export default function FlightSearch() {
 
       {/* Search results */}
       {mode === 'search' && hasSearched && results.length === 0 && !loading && (
-        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-          <p className="text-zinc-500 dark:text-zinc-400">
-            No redemption options found for {origin.toUpperCase()} → {destination.toUpperCase()} in {cabinFilter === 'first' ? 'First Class' : cabinFilter === 'business' ? 'Business Class' : 'Economy'}.
-            This could mean no award space is available, or your points don&apos;t transfer to programs serving this route.
+        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-10 dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="mb-3 text-3xl text-center">🔍</div>
+          <h3 className="mb-2 text-center text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            No {cabinFilter === 'first' ? 'First Class' : cabinFilter === 'business' ? 'Business Class' : 'Economy'} awards found for {origin.toUpperCase()} → {destination.toUpperCase()}
+          </h3>
+          <p className="mb-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            Award space is genuinely scarce on many routes — this is normal. Here&apos;s what to try:
           </p>
+          <ul className="mx-auto max-w-sm space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-zinc-400">→</span>
+              Try <strong>Economy</strong> — it&apos;s often available when business is sold out
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-zinc-400">→</span>
+              Check nearby airports (e.g. JFK/EWR, LAX/SFO)
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-zinc-400">→</span>
+              Your points may not transfer to any program serving this route — check My Cards
+            </li>
+          </ul>
         </div>
       )}
 
@@ -298,10 +324,28 @@ export default function FlightSearch() {
 
       {/* Browse results */}
       {mode === 'browse' && hasBrowsed && browseResults.length === 0 && !loading && (
-        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-12 text-center dark:border-zinc-700 dark:bg-zinc-900">
-          <p className="text-zinc-500 dark:text-zinc-400">
-            No routes found with available {cabinFilter === 'first' ? 'First Class' : cabinFilter === 'business' ? 'Business Class' : 'Economy'} award space for your points currencies.
+        <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-10 dark:border-zinc-700 dark:bg-zinc-900">
+          <div className="mb-3 text-3xl text-center">🌍</div>
+          <h3 className="mb-2 text-center text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            No {cabinFilter === 'first' ? 'First Class' : cabinFilter === 'business' ? 'Business Class' : 'Economy'} awards available right now
+          </h3>
+          <p className="mb-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
+            Award space fluctuates — seats that aren&apos;t there today often appear tomorrow. A few things to try:
           </p>
+          <ul className="mx-auto max-w-sm space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-zinc-400">→</span>
+              Switch to <strong>Economy</strong> — much more availability across all programs
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-zinc-400">→</span>
+              Add more cards to unlock transfer partners with better availability
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="mt-0.5 shrink-0 text-zinc-400">→</span>
+              Check back — live availability data updates frequently
+            </li>
+          </ul>
         </div>
       )}
 
@@ -393,7 +437,7 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
 
   return (
     <div
-      className={`rounded-lg border bg-white p-5 dark:bg-zinc-900 ${
+      className={`rounded-lg border bg-white p-5 shadow-sm dark:bg-zinc-900 ${
         option.canAfford
           ? 'border-green-200 dark:border-green-900'
           : 'border-zinc-200 dark:border-zinc-800'
@@ -403,7 +447,13 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-bold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+            <span
+              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                rank === 1
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-400'
+                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+              }`}
+            >
               {rank}
             </span>
             {programLogoUrl && (
@@ -414,28 +464,28 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
               />
             )}
-            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
               {option.flight.operatingAirline} — {cabinLabel}
             </h3>
           </div>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             {option.flight.origin} → {option.flight.destination}
-            {option.flight.direct ? ' (Direct)' : ' (Connecting)'}
+            {option.flight.direct ? ' · Direct' : ' · Connecting'}
             {' · '}
             {option.flight.date}
             {option.remainingSeats !== null && (
-              <span className="ml-2 text-amber-600 dark:text-amber-400">
-                {option.remainingSeats} seat{option.remainingSeats !== 1 ? 's' : ''} left
+              <span className="ml-2 font-medium text-amber-600 dark:text-amber-400">
+                · {option.remainingSeats} seat{option.remainingSeats !== 1 ? 's' : ''} left
               </span>
             )}
           </p>
         </div>
 
-        {/* Value badge */}
-        <div className="text-right">
+        {/* Value badge — primary signal, make it prominent */}
+        <div className="shrink-0 text-right">
           {option.centsPerPoint !== null && (
             <div
-              className={`inline-block rounded-full px-3 py-1 text-sm font-bold ${
+              className={`inline-block rounded-full px-4 py-1.5 text-base font-bold ${
                 option.centsPerPoint >= 2
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
                   : option.centsPerPoint >= 1.5
@@ -449,8 +499,8 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
         </div>
       </div>
 
-      {/* Details grid */}
-      <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* Details grid — omit retail value when null */}
+      <div className={`mt-4 grid gap-4 ${option.retailPrice !== null ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
         <div>
           <p className="text-xs text-zinc-400 dark:text-zinc-500">Award Program</p>
           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
@@ -478,17 +528,19 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
             from {option.paymentPath.currencyName}
           </p>
         </div>
-        <div>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500">Retail Value</p>
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-            {option.retailPrice !== null ? `$${option.retailPrice.toLocaleString()}` : '—'}
-          </p>
-        </div>
+        {option.retailPrice !== null && (
+          <div>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">Retail Value</p>
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              ${option.retailPrice.toLocaleString()}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Transfer path */}
       {isTransfer && (
-        <div className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-sm dark:bg-blue-950/30">
+        <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm dark:border-blue-900 dark:bg-blue-950/30">
           <span className="font-medium text-blue-800 dark:text-blue-300">Transfer: </span>
           <span className="text-blue-700 dark:text-blue-400">
             {option.paymentPath.pointsNeeded.toLocaleString()} {option.paymentPath.currencyName}
@@ -503,18 +555,18 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
         </div>
       )}
 
-      {/* Three-tier affordability options */}
+      {/* Three-tier affordability options — each tier visually distinct */}
       <div className="mt-3 space-y-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-        {/* Tier 1: Can afford */}
+        {/* Tier 1: Can afford — prominent, action-forward */}
         {option.canAfford && (
-          <div className="rounded-md bg-green-50 px-3 py-2 dark:bg-green-950/30">
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">
-              You can book this now
+          <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 dark:border-green-800 dark:bg-green-950/40">
+            <p className="text-base font-semibold text-green-800 dark:text-green-300">
+              ✓ You can book this now
             </p>
-            <p className="text-xs text-green-600 dark:text-green-400">
-              You have {option.userBalance.toLocaleString()} pts — this costs {option.paymentPath.pointsNeeded.toLocaleString()} pts + ${option.taxes} taxes
+            <p className="mt-0.5 text-sm text-green-700 dark:text-green-400">
+              You have {option.userBalance.toLocaleString()} pts — costs {option.paymentPath.pointsNeeded.toLocaleString()} pts + ${option.taxes} taxes
               {option.retailPrice !== null && (
-                <span> (saving ${(option.retailPrice - option.taxes).toLocaleString()} vs retail)</span>
+                <span className="font-medium"> · saves ${(option.retailPrice - option.taxes).toLocaleString()} vs retail</span>
               )}
             </p>
           </div>
@@ -522,28 +574,28 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
 
         {/* Tier 2: Buy points to cover the gap */}
         {!option.canAfford && buyCost !== null && (
-          <div className="rounded-md bg-amber-50 px-3 py-2 dark:bg-amber-950/30">
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+          <div className="rounded-md bg-amber-50 px-3 py-2.5 dark:bg-amber-950/30">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
               Buy {pointsShort.toLocaleString()} more points for ~${buyCost.toLocaleString()}
             </p>
-            <p className="text-xs text-amber-600 dark:text-amber-400">
+            <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
               You have {option.userBalance.toLocaleString()} of {option.paymentPath.pointsNeeded.toLocaleString()} pts needed.
-              Purchase the remaining {option.paymentPath.currencyName} at ~{buyRate.centsPerPoint}¢/pt + ${option.taxes} taxes = ~${(buyCost + option.taxes).toLocaleString()} total cash
+              Purchase {option.paymentPath.currencyName} at ~{buyRate.centsPerPoint}¢/pt + ${option.taxes} taxes = ~${(buyCost + option.taxes).toLocaleString()} total
             </p>
           </div>
         )}
 
-        {/* Tier 3: Open a card for welcome bonus */}
+        {/* Tier 3: Open a card for welcome bonus — lowest prominence */}
         {!option.canAfford && cardRec && (
           <div className="rounded-md bg-purple-50 px-3 py-2 dark:bg-purple-950/30">
             <p className="text-sm font-medium text-purple-800 dark:text-purple-300">
               Open {cardRec.cardName} → earn {cardRec.bonus.toLocaleString()} bonus pts
             </p>
-            <p className="text-xs text-purple-600 dark:text-purple-400">
+            <p className="mt-0.5 text-xs text-purple-600 dark:text-purple-400">
               {pointsAfterCard === 0 ? (
-                <>Welcome bonus covers the gap. Annual fee: ${cardRec.annualFee}/yr + ${option.taxes} taxes = ${(cardRec.annualFee + option.taxes).toLocaleString()} total cash</>
+                <>Bonus covers the gap. Annual fee: ${cardRec.annualFee}/yr + ${option.taxes} taxes = ${(cardRec.annualFee + option.taxes).toLocaleString()} total</>
               ) : (
-                <>Still need {pointsAfterCard.toLocaleString()} pts after bonus. Estimated total: ~${costAfterCard?.toLocaleString()} (annual fee + remaining pts purchase + ${option.taxes} taxes)</>
+                <>Still need {pointsAfterCard.toLocaleString()} pts after bonus. Est. total: ~${costAfterCard?.toLocaleString()} (fee + remaining pts + taxes)</>
               )}
               {cardRec.spend > 0 && (
                 <span> · Requires ${cardRec.spend.toLocaleString()} spend in {cardRec.months} months</span>
@@ -553,9 +605,9 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
         )}
       </div>
 
-      {/* View guide link */}
+      {/* Book now button — prominent CTA for affordable options */}
       {option.canAfford && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Link
             href={`/redeem?flight=${option.flight.id}&cabin=${option.cabin}&currency=${option.paymentPath.currencyId}&program=${option.flight.source}`}
             onClick={() => {
@@ -566,9 +618,9 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
                 JSON.stringify(option.flight)
               )
             }}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            className="inline-flex items-center gap-1.5 rounded-md bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
           >
-            View step-by-step booking guide →
+            View Step-by-Step Booking Guide →
           </Link>
         </div>
       )}
