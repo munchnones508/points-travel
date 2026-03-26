@@ -61,6 +61,35 @@ Activated 2026-03-25. The app now uses **real data** from the Seats.aero partner
 - Points buy rates and welcome bonuses are approximate/hardcoded — real data would come from an API in v2
 - Display pattern: issuer name as primary heading, currency/program name as secondary
 
+## Differentiation Opportunities
+
+### Transfer Path Gap Analyzer ("You need X more points — here's how to get them")
+
+**What it does:**
+When a user can't afford a redemption, the app doesn't just say "you need 20,000 more points" — it shows a ranked list of *specific, actionable ways* to close the gap using their existing card portfolio. For each gap:
+
+1. **Spending optimization**: "Put $2,400 on your Amex Gold (4x dining) and you'll have enough in 60 days."
+2. **Transfer partner arbitrage**: "You have 45k Chase UR — transfer 30k to United and you can book this right now."
+3. **Welcome bonus targeting**: "The Chase Sapphire Preferred welcome bonus (60k) would cover this with points to spare."
+4. **Buy/transfer comparison**: "Buying 12k Avios costs $180. Earning them via a $3k Chase spend is better."
+
+The key insight: the user has a *specific goal* (this flight, this route), and we know their entire card portfolio. We can model the exact path from "where they are now" to "booked."
+
+**Why it differentiates from Roame.travel:**
+- Roame shows award availability brilliantly but treats users as point-agnostic. It has no awareness of what cards you hold, what currencies you can access, or how close you are to being able to book.
+- Roame does not model the *gap* between what a user has and what they need.
+- Roame does not show "transfer 30k of your Chase UR → United to book this now."
+- This feature is deeply personalized — it's useless without the user's card portfolio data, which is exactly what points-travel already collects.
+- Result: points-travel becomes not just a discovery tool but a *decision engine* that tells you exactly what to do.
+
+**Rough effort:** L (Large)
+- Requires modeling earning rates per card per spend category (dining, travel, groceries, etc.)
+- Requires a "points gap solver" — given target currency + shortfall, find cheapest path across all transfer partners, buy rates, and card earn rates
+- UI work: a "How to Get There" section on each non-affordable result card
+- Data work: card earn rates per category for all cards in cards.ts
+
+---
+
 ## What Is NOT Built Yet (Backlog)
 - Retail price enrichment — needed for CPP (cents-per-point) value badges on live results
 - Date range picker in search UI — currently defaults to today → 60 days out
