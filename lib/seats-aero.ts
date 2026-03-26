@@ -168,7 +168,8 @@ const GBP_TO_USD = 1.27 // approximate — update periodically or fetch at runti
 function normalizeTaxesToUSD(taxes: number, currency: string): number {
   if (!currency || currency.toUpperCase() === 'USD') return taxes
   if (currency.toUpperCase() === 'GBP') return Math.round(taxes * GBP_TO_USD)
-  // Other currencies: return as-is with a TODO for proper conversion
+  // Other currencies (EUR, JPY, etc.) returned as-is.
+  // In v2, fetch a live FX rate or extend the lookup table above.
   return taxes
 }
 
