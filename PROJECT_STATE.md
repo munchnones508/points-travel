@@ -1,13 +1,13 @@
 # PROJECT_STATE.md — points-travel
 
 ## Last Updated
-2026-03-25 (overnight session)
+2026-03-26 (Gap Analyzer design session)
 
 ## What This Project Is
 A web app that helps users maximize credit card points for flights. Users enter their cards and balances, search a route, and see every award flight they can book — including via transfer partners — with foolproof step-by-step booking instructions.
 
 ## Current Status
-**Phase:** MVP functional with live data — UI polished, competitive analysis done
+**Phase:** MVP functional with live data — designing Transfer Path Gap Analyzer (in brainstorming)
 **Stack:** Next.js + TypeScript + Tailwind + App Router + localStorage
 
 ## What Has Been Built
@@ -90,11 +90,19 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - This feature is deeply personalized — it's useless without the user's card portfolio data, which is exactly what points-travel already collects.
 - Result: points-travel becomes not just a discovery tool but a *decision engine* that tells you exactly what to do.
 
-**Rough effort:** L (Large)
-- Requires modeling earning rates per card per spend category (dining, travel, groceries, etc.)
-- Requires a "points gap solver" — given target currency + shortfall, find cheapest path across all transfer partners, buy rates, and card earn rates
-- UI work: a "How to Get There" section on each non-affordable result card
-- Data work: card earn rates per category for all cards in cards.ts
+**Status:** Design in progress (2026-03-26). Brainstorming complete, presenting architecture for approval.
+
+**Design decisions confirmed:**
+- **Gap Solver Engine** — full combinatorial solver (not a simpler strategy ranker). Tries every permutation of transfer/buy/open-card and combos. Scores by cost (heaviest), time, complexity.
+- **Only viable strategies shown** — no greyed-out options. If user can't transfer, don't show transfer.
+- **Combined strategies** — solver finds optimal combos (e.g., "Transfer 15k from Chase + buy 25k miles")
+- **Time estimates on every strategy** — "Instant" for transfers, "2-3 days" for buying, "Spend $4,000 in 3 months" for cards
+- **Availability warnings** — if flight date is sooner than the plan's timeline, warn the user
+- **UI: inline on ResultCard, expandable** — collapsed by default ("View more options to redeem"), no navigation away
+- **Card recommendations** — single best card shown, 2-3 alternatives behind an expandable
+- **Minimal wishlist** — for no-path-now scenarios, "Save to Wishlist" stores route in localStorage. No alerts yet.
+
+**Architecture:** `lib/gapSolver.ts` — takes (target program, gap, user portfolio, flight date) → returns `GapPlan[]` sorted best-first. Each plan has steps, totalCost, timeEstimate, maxTimeDays, coversFullGap.
 
 ---
 
@@ -102,19 +110,18 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - Retail price enrichment — needed for CPP (cents-per-point) value badges on live results
 - Date range picker in search UI — currently defaults to today → 60 days out
 - `fetchTripDetail()` integration — populate direct/connecting flag and segment-level flight numbers
-- Roame.travel competitive research — identify differentiation opportunities
-- Vacation wishlist / deal alerts — "I want to go to Japan" → notify when deals open for user's cards
+- Vacation wishlist — full version with deal alerts and notifications (minimal save-to-localStorage version ships with Gap Analyzer)
 - Multi-traveler support — number of travelers, household card pooling (spouse's cards)
 - Authentication / multi-user support
 - Mobile app
 
 ## Next Steps
-1. **Add `retailPrice` enrichment** — Seats.aero doesn't provide it; options: (a) hardcode by route/cabin, (b) integrate Google Flights or Kayak API, (c) skip CPP badge for now
-2. **Add date range picker** to search UI and pass dates to `searchFlights(origin, dest, startDate, endDate)`
-3. **Use `fetchTripDetail()`** to populate the `direct` flag and per-segment flight numbers on the booking guide page
-4. **Build Transfer Path Gap Analyzer** (see Differentiation Opportunities) — the single highest-value feature to build next
-5. **Test live data thoroughly** — verify search results, affordability tiers, and booking guides work end-to-end with real Seats.aero responses
-6. **Nav active state** — add `usePathname()` to highlight current page in header nav (Low, quick win)
+1. **Finish Gap Analyzer design** — complete remaining design sections (data layer, UI, wishlist), write spec, get approval
+2. **Build Gap Analyzer** — `lib/gapSolver.ts` + ResultCard UI + minimal wishlist
+3. **Add `retailPrice` enrichment** — needed for CPP badges on live results
+4. **Add date range picker** to search UI
+5. **Use `fetchTripDetail()`** for direct/connecting flags and flight numbers
+6. **Nav active state** — add `usePathname()` to highlight current page in header nav
 
 ## UI Issues Still Outstanding (from audit)
 - **L1** (Medium): Nav link active state — no current-page highlight
