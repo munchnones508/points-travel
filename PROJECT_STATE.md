@@ -1,13 +1,13 @@
 # PROJECT_STATE.md — points-travel
 
 ## Last Updated
-2026-03-26 (Gap Analyzer design session)
+2026-03-28 (Gap Analyzer implementation complete)
 
 ## What This Project Is
 A web app that helps users maximize credit card points for flights. Users enter their cards and balances, search a route, and see every award flight they can book — including via transfer partners — with foolproof step-by-step booking instructions.
 
 ## Current Status
-**Phase:** MVP functional with live data — designing Transfer Path Gap Analyzer (in brainstorming)
+**Phase:** MVP functional with live data — Gap Analyzer shipped
 **Stack:** Next.js + TypeScript + Tailwind + App Router + localStorage
 
 ## What Has Been Built
@@ -20,7 +20,9 @@ A web app that helps users maximize credit card points for flights. Users enter 
 - Search + Results UI — two modes: free-form From/To search + "Routes for My Points" browse
 - Loading spinner + error handling for live API calls
 - Cabin toggle — Economy / Business / First Class pill buttons (with icons: 💺🛋⭐)
-- Three-tier affordability on results: (1) book now, (2) buy points with cost estimate, (3) open a card with welcome bonus recommendation
+- **Transfer Path Gap Analyzer** — combinatorial solver that finds optimal plans to close the points gap (transfer + buy + open-card combos), with time estimates and flight availability warnings. Replaces old three-tier affordability sections.
+- GapAnalysis UI — inline expandable on ResultCard, best plan always visible, alternates behind "View more options to redeem"
+- Minimal wishlist — save-to-localStorage for routes user can't book yet, wishlist page at /wishlist
 - Points pricing data — buy rates for all currencies/programs + welcome bonus data for key cards
 - Company logos via Clearbit API — on summary banner, card lists, airline lists, and search results
 - Display restructure — H1: issuer/airline name, H2 grey: currency/program name (e.g., "American Express" / "Membership Rewards")
@@ -90,19 +92,23 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - This feature is deeply personalized — it's useless without the user's card portfolio data, which is exactly what points-travel already collects.
 - Result: points-travel becomes not just a discovery tool but a *decision engine* that tells you exactly what to do.
 
-**Status:** Design in progress (2026-03-26). Brainstorming complete, presenting architecture for approval.
+**Status:** Shipped (2026-03-28). Implemented on `feat/gap-analyzer` branch.
 
-**Design decisions confirmed:**
-- **Gap Solver Engine** — full combinatorial solver (not a simpler strategy ranker). Tries every permutation of transfer/buy/open-card and combos. Scores by cost (heaviest), time, complexity.
-- **Only viable strategies shown** — no greyed-out options. If user can't transfer, don't show transfer.
-- **Combined strategies** — solver finds optimal combos (e.g., "Transfer 15k from Chase + buy 25k miles")
-- **Time estimates on every strategy** — "Instant" for transfers, "2-3 days" for buying, "Spend $4,000 in 3 months" for cards
-- **Availability warnings** — if flight date is sooner than the plan's timeline, warn the user
-- **UI: inline on ResultCard, expandable** — collapsed by default ("View more options to redeem"), no navigation away
-- **Card recommendations** — single best card shown, 2-3 alternatives behind an expandable
-- **Minimal wishlist** — for no-path-now scenarios, "Save to Wishlist" stores route in localStorage. No alerts yet.
+**Architecture:**
+- `lib/gapSolverTypes.ts` — GapPlan, GapStep, GapSolverInput types
+- `lib/gapSolver.ts` — combinatorial solver: inventory scan → strategy generation → combo builder → scoring → sorted GapPlan[]
+- `app/_components/GapAnalysis.tsx` — expandable UI component, replaces old Tier 2/3 in ResultCard
+- `data/userWishlist.ts` — localStorage CRUD for saved routes
+- `app/wishlist/page.tsx` — wishlist page with "Search Again" and "Remove" actions
 
-**Architecture:** `lib/gapSolver.ts` — takes (target program, gap, user portfolio, flight date) → returns `GapPlan[]` sorted best-first. Each plan has steps, totalCost, timeEstimate, maxTimeDays, coversFullGap.
+**Key design decisions:**
+- Full combinatorial solver (not a simpler strategy ranker) — tries transfer/buy/open-card singles and two-strategy combos
+- Scoring: cost (50%), time (35%), complexity (15%)
+- Only viable strategies shown — no greyed-out options
+- Time estimates on every strategy, availability warnings when plan > flight date
+- Best plan always visible, alternates behind expandable
+- Card recommendations: best card shown, 2-3 alternatives in nested expandable
+- Wishlist for no-path-now scenarios (localStorage only, no alerts yet)
 
 ---
 
@@ -116,8 +122,8 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - Mobile app
 
 ## Next Steps
-1. **Finish Gap Analyzer design** — complete remaining design sections (data layer, UI, wishlist), write spec, get approval
-2. **Build Gap Analyzer** — `lib/gapSolver.ts` + ResultCard UI + minimal wishlist
+1. **Merge `feat/gap-analyzer` into main** — branch pushed to GitHub, 7 commits, clean build, ready for PR or direct merge
+2. **Manual testing** — verify gap analysis appears on non-affordable results, test wishlist flow end-to-end
 3. **Add `retailPrice` enrichment** — needed for CPP badges on live results
 4. **Add date range picker** to search UI
 5. **Use `fetchTripDetail()`** for direct/connecting flags and flight numbers
@@ -133,10 +139,11 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - **L3** (Medium): Nav overflow on small mobile screens
 
 ## Open Questions
-- How deep should the "open a card" recommendations go? (just welcome bonus, or also earning rate analysis?)
 - Priority order for backlog features?
 - Should we add a fallback to mock data if the API key is missing or the API is down?
+- Full wishlist with deal alerts — what should trigger a notification? (new availability, price drop, etc.)
 
 ## GitHub
 Repository: https://github.com/munchnones508/points-travel (private)
-Branch: main
+Branch: main (design spec + plan pushed)
+Feature branch: `feat/gap-analyzer` (7 commits, pushed 2026-03-28)
