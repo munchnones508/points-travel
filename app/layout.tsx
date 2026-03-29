@@ -50,6 +50,12 @@ export default function RootLayout({
               >
                 Search Flights
               </Link>
+              <Link
+                href="/wishlist"
+                className="text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              >
+                Wishlist
+              </Link>
             </nav>
           </div>
         </header>
