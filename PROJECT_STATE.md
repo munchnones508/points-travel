@@ -122,7 +122,7 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - Mobile app
 
 ## Next Steps
-1. **Merge `feat/gap-analyzer` branch** — 6 commits, clean build, ready for review
+1. **Merge `feat/gap-analyzer` into main** — branch pushed to GitHub, 7 commits, clean build, ready for PR or direct merge
 2. **Manual testing** — verify gap analysis appears on non-affordable results, test wishlist flow end-to-end
 3. **Add `retailPrice` enrichment** — needed for CPP badges on live results
 4. **Add date range picker** to search UI
@@ -145,4 +145,5 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 
 ## GitHub
 Repository: https://github.com/munchnones508/points-travel (private)
-Branch: main
+Branch: main (design spec + plan pushed)
+Feature branch: `feat/gap-analyzer` (7 commits, pushed 2026-03-28)
