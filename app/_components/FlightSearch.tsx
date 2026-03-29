@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { availableRoutes, awardPrograms, cards, currencies } from '../../data'
+import { availableRoutes, awardPrograms } from '../../data'
 import { getLogoUrl } from '../../lib/logos'
 import { getUserCards, type UserCard } from '../../data/userCards'
 import { getUserMiles, type UserMiles } from '../../data/userMiles'
 import type { RedemptionOption, CabinClass } from '../../lib/redemptionEngine'
-import { buyRates, welcomeBonuses } from '../../data/pointsPricing'
+import GapAnalysis from './GapAnalysis'
 
 type SearchMode = 'search' | 'browse'
 
@@ -317,7 +317,7 @@ export default function FlightSearch() {
             {results.length} Redemption Option{results.length !== 1 ? 's' : ''} Found
           </h2>
           {results.map((option, index) => (
-            <ResultCard key={index} option={option} rank={index + 1} userCards={userCards} />
+            <ResultCard key={index} option={option} rank={index + 1} userCards={userCards} userMiles={userMiles} />
           ))}
         </div>
       )}
@@ -367,7 +367,7 @@ export default function FlightSearch() {
                 </div>
                 <div className="space-y-4">
                   {routeGroup.options.slice(0, 3).map((option, index) => (
-                    <ResultCard key={index} option={option} rank={index + 1} userCards={userCards} />
+                    <ResultCard key={index} option={option} rank={index + 1} userCards={userCards} userMiles={userMiles} />
                   ))}
                   {routeGroup.options.length > 3 && (
                     <p className="text-sm text-zinc-400 dark:text-zinc-500">
@@ -384,38 +384,7 @@ export default function FlightSearch() {
   )
 }
 
-// Figures out the best card to open for a given currency, returning the welcome bonus details
-function getBestCardRecommendation(
-  currencyId: string,
-  userCards: UserCard[]
-): { cardName: string; issuer: string; bonus: number; spend: number; months: number; annualFee: number } | null {
-  // Find cards that earn this currency and have a welcome bonus
-  const candidateCards = cards.filter(
-    (c) => c.currencyId === currencyId && !userCards.some((uc) => uc.cardId === c.id)
-  )
-
-  let bestCard = null
-  let bestBonus = 0
-
-  for (const card of candidateCards) {
-    const wb = welcomeBonuses[card.id]
-    if (wb && wb.bonus > bestBonus) {
-      bestBonus = wb.bonus
-      bestCard = {
-        cardName: `${card.issuer} ${card.name}`,
-        issuer: card.issuer,
-        bonus: wb.bonus,
-        spend: wb.spend,
-        months: wb.months,
-        annualFee: card.annualFee,
-      }
-    }
-  }
-
-  return bestCard
-}
-
-function ResultCard({ option, rank, userCards }: { option: RedemptionOption; rank: number; userCards: UserCard[] }) {
+function ResultCard({ option, rank, userCards, userMiles }: { option: RedemptionOption; rank: number; userCards: UserCard[]; userMiles: UserMiles[] }) {
   const program = awardPrograms.find((p) => p.id === option.flight.source)
   const cabinLabel =
     option.cabin === 'first' ? 'First Class' :
@@ -423,17 +392,6 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
 
   const isTransfer = option.paymentPath.type === 'transfer'
   const programLogoUrl = program ? getLogoUrl(program.id) : ''
-
-  // Calculate the three affordability tiers
-  const pointsShort = option.canAfford ? 0 : option.paymentPath.pointsNeeded - option.userBalance
-  const currencyId = option.paymentPath.currencyId
-  const buyRate = buyRates[currencyId]
-  const buyCost = buyRate ? Math.ceil((pointsShort * buyRate.centsPerPoint) / 100) : null
-  const cardRec = option.canAfford ? null : getBestCardRecommendation(currencyId, userCards)
-
-  // If opening a card covers the gap, how many more points needed after the bonus?
-  const pointsAfterCard = cardRec ? Math.max(0, pointsShort - cardRec.bonus) : pointsShort
-  const costAfterCard = buyRate && cardRec ? Math.ceil((pointsAfterCard * buyRate.centsPerPoint) / 100) + cardRec.annualFee : null
 
   return (
     <div
@@ -572,36 +530,9 @@ function ResultCard({ option, rank, userCards }: { option: RedemptionOption; ran
           </div>
         )}
 
-        {/* Tier 2: Buy points to cover the gap */}
-        {!option.canAfford && buyCost !== null && (
-          <div className="rounded-md bg-amber-50 px-3 py-2.5 dark:bg-amber-950/30">
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-              Buy {pointsShort.toLocaleString()} more points for ~${buyCost.toLocaleString()}
-            </p>
-            <p className="mt-0.5 text-xs text-amber-600 dark:text-amber-400">
-              You have {option.userBalance.toLocaleString()} of {option.paymentPath.pointsNeeded.toLocaleString()} pts needed.
-              Purchase {option.paymentPath.currencyName} at ~{buyRate.centsPerPoint}¢/pt + ${option.taxes} taxes = ~${(buyCost + option.taxes).toLocaleString()} total
-            </p>
-          </div>
-        )}
-
-        {/* Tier 3: Open a card for welcome bonus — lowest prominence */}
-        {!option.canAfford && cardRec && (
-          <div className="rounded-md bg-purple-50 px-3 py-2 dark:bg-purple-950/30">
-            <p className="text-sm font-medium text-purple-800 dark:text-purple-300">
-              Open {cardRec.cardName} → earn {cardRec.bonus.toLocaleString()} bonus pts
-            </p>
-            <p className="mt-0.5 text-xs text-purple-600 dark:text-purple-400">
-              {pointsAfterCard === 0 ? (
-                <>Bonus covers the gap. Annual fee: ${cardRec.annualFee}/yr + ${option.taxes} taxes = ${(cardRec.annualFee + option.taxes).toLocaleString()} total</>
-              ) : (
-                <>Still need {pointsAfterCard.toLocaleString()} pts after bonus. Est. total: ~${costAfterCard?.toLocaleString()} (fee + remaining pts + taxes)</>
-              )}
-              {cardRec.spend > 0 && (
-                <span> · Requires ${cardRec.spend.toLocaleString()} spend in {cardRec.months} months</span>
-              )}
-            </p>
-          </div>
+        {/* Gap Analysis: transfer, buy, or open a card */}
+        {!option.canAfford && (
+          <GapAnalysis option={option} userCards={userCards} userMiles={userMiles} />
         )}
       </div>
 
