@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — points-travel
 
 ## Last Updated
-2026-03-28 (Gap Analyzer implementation complete)
+2026-03-29 (user testing session — bugs and UX issues identified)
 
 ## What This Project Is
 A web app that helps users maximize credit card points for flights. Users enter their cards and balances, search a route, and see every award flight they can book — including via transfer partners — with foolproof step-by-step booking instructions.
@@ -121,13 +121,22 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - Authentication / multi-user support
 - Mobile app
 
+## Bugs (from user testing 2026-03-29)
+
+### BUG: Tax display 100x too high on BA/VS routes
+- **Severity:** Critical — shows "$140,400 taxes" instead of ~$559
+- **Root cause:** `lib/seats-aero.ts` `normalizeTaxesToUSD()` receives GBP taxes in pence from Seats.aero API but treats them as pounds. Needs `/100` before GBP→USD conversion.
+- **Affects:** All British Airways and Virgin Atlantic routes (GBP tax currency)
+- **Status:** Not yet fixed
+
 ## Next Steps
-1. **Merge `feat/gap-analyzer` into main** — branch pushed to GitHub, 7 commits, clean build, ready for PR or direct merge
-2. **Manual testing** — verify gap analysis appears on non-affordable results, test wishlist flow end-to-end
-3. **Add `retailPrice` enrichment** — needed for CPP badges on live results
-4. **Add date range picker** to search UI
-5. **Use `fetchTripDetail()`** for direct/connecting flags and flight numbers
-6. **Nav active state** — add `usePathname()` to highlight current page in header nav
+1. **Fix tax display bug** — divide GBP taxes by 100 in `normalizeTaxesToUSD()` in `lib/seats-aero.ts`
+2. **Airport search dropdown** — From/To fields need autocomplete/typeahead showing matching airports as user types
+3. **Date range picker** — Kayak-style: specific dates, weekends, or months. Currently locked to today → 60 days with no user control.
+4. **Gap Analyzer card UX improvements** — clearer "best option" recommendation, clear total trip cost per option, info icons for contextual details like "2-3 business days"
+5. **Add `retailPrice` enrichment** — needed for CPP badges on live results
+6. **Use `fetchTripDetail()`** for direct/connecting flags and flight numbers
+7. **Nav active state** — add `usePathname()` to highlight current page in header nav
 
 ## UI Issues Still Outstanding (from audit)
 - **L1** (Medium): Nav link active state — no current-page highlight
@@ -139,11 +148,10 @@ The key insight: the user has a *specific goal* (this flight, this route), and w
 - **L3** (Medium): Nav overflow on small mobile screens
 
 ## Open Questions
-- Priority order for backlog features?
+- Priority order for items 2-4 above?
 - Should we add a fallback to mock data if the API key is missing or the API is down?
 - Full wishlist with deal alerts — what should trigger a notification? (new availability, price drop, etc.)
 
 ## GitHub
 Repository: https://github.com/munchnones508/points-travel (private)
-Branch: main (design spec + plan pushed)
-Feature branch: `feat/gap-analyzer` (7 commits, pushed 2026-03-28)
+Branch: main (Gap Analyzer merged via PR #1, 2026-03-28)
